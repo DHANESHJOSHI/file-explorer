@@ -23,7 +23,6 @@ const ExplorerItem = ({ item }: { item: Item }) => {
   const handleCreate = () => {
     if (fileName.trim().length <= 0) return;
 
-
     // edge-case: ".gitignore", ".env" (Handled)
     const isFile = fileName.split(".").length > 1;
 
@@ -33,16 +32,23 @@ const ExplorerItem = ({ item }: { item: Item }) => {
       isFolder: !isFile,
       items: [],
     };
+    // sort items alphabetically
+    const updatedItems = [...localItem.items, newItem].sort((a, b) => {
+      if (a.isFolder && !b.isFolder) return -1;
+      if (!a.isFolder && b.isFolder) return 1;
+      return a.name.localeCompare(b.name);
+    });
 
-    const updatedItems = [...localItem.items, newItem].sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
 
-    setLocalItem({ ...localItem, items: updatedItems });
+    // No api calls involved (in this example)
+    setLocalItem({
+      ...localItem,
+      items: [...localItem.items, newItem],
+    });
+
     setFileName("");
     setIsCreating(false);
   };
-
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Escape") {
       setIsCreating(false);
@@ -69,9 +75,13 @@ const ExplorerItem = ({ item }: { item: Item }) => {
           </button>
           <div style={{ display: open ? "block" : "none" }}>
             {localItem.items
-              .sort((a, b) => a.name.localeCompare(b.name))
-              .map((item) => (
-                <ExplorerItem key={item.id} item={item} />
+              .sort((a, b) => {
+                if (a.isFolder && !b.isFolder) return -1; // Folder should always come before files
+                if (!a.isFolder && b.isFolder) return 1; // Files should come after folders
+                return a.name.localeCompare(b.name);
+              })
+              .map((item, index) => (
+                <ExplorerItem key={`${item.id}-${index}`} item={item} />
               ))}
             {isCreating ? (
               <div className="ml-4">
