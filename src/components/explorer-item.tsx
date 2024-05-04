@@ -18,10 +18,12 @@ const ExplorerItem = ({ item }: { item: Item }) => {
   const [fileName, setFileName] = useState("");
   const [localItem, setLocalItem] = useState(item);
 
+  const toggleOpen = () => setOpen(!open);
+
   const handleCreate = () => {
-    if (fileName.trim().length <= 0) {
-      return;
-    }
+    if (fileName.trim().length <= 0) return;
+
+
     // edge-case: ".gitignore", ".env" (Handled)
     const isFile = fileName.split(".").length > 1;
 
@@ -32,39 +34,45 @@ const ExplorerItem = ({ item }: { item: Item }) => {
       items: [],
     };
 
-    // No api calls involved (in this example)
-    setLocalItem({
-      ...localItem,
-      items: [...localItem.items, newItem],
-    });
+    const updatedItems = [...localItem.items, newItem].sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
 
+    setLocalItem({ ...localItem, items: updatedItems });
     setFileName("");
     setIsCreating(false);
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Escape") {
+      setIsCreating(false);
+    }
+    if (e.key === "Enter") {
+      handleCreate();
+    }
+  };
+
   return (
-    <div className="flex flex-col ml-4 my-2 w-56 truncate flex-shrink-0">
+    <div className="flex flex-col flex-shrink-0 w-56 my-2 ml-4 truncate">
       {localItem.isFolder ? (
         <>
           <button
-            className="flex justify-start items-center font-semibold flex-shrink-0"
-            onClick={() => setOpen(!open)}
+            className="flex items-center justify-start flex-shrink-0 font-semibold"
+            onClick={toggleOpen}
           >
             {open ? (
-              <FolderOpenIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+              <FolderOpenIcon className="flex-shrink-0 w-4 h-4 mr-2" />
             ) : (
-              <FolderIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+              <FolderIcon className="flex-shrink-0 w-4 h-4 mr-2" />
             )}
             {localItem.name}
           </button>
-          <div
-            style={{
-              display: open ? "block" : "none",
-            }}
-          >
-            {localItem.items.map((item) => {
-              return <ExplorerItem key={localItem.id} item={item} />;
-            })}
+          <div style={{ display: open ? "block" : "none" }}>
+            {localItem.items
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((item) => (
+                <ExplorerItem key={item.id} item={item} />
+              ))}
             {isCreating ? (
               <div className="ml-4">
                 <input
@@ -73,22 +81,13 @@ const ExplorerItem = ({ item }: { item: Item }) => {
                   value={fileName}
                   onChange={(e) => setFileName(e.target.value)}
                   autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === "Escape") {
-                      setIsCreating(false);
-                    }
-                    if (e.key === "Enter") {
-                      handleCreate();
-                    }
-                  }}
+                  onKeyDown={handleKeyPress}
                 />
               </div>
             ) : (
               <button
                 className="ml-4 text-gray-500"
-                onClick={() => {
-                  setIsCreating(!isCreating);
-                }}
+                onClick={() => setIsCreating(true)}
               >
                 + create
               </button>
@@ -96,8 +95,8 @@ const ExplorerItem = ({ item }: { item: Item }) => {
           </div>
         </>
       ) : (
-        <div className="flex justify-start items-center flex-shrink-0">
-          <DocumentIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+        <div className="flex items-center justify-start flex-shrink-0">
+          <DocumentIcon className="flex-shrink-0 w-4 h-4 mr-2" />
           {localItem.name}
         </div>
       )}
